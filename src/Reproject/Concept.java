@@ -1,5 +1,5 @@
 package Reproject;
-
+import java.io.Serializable;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -7,10 +7,12 @@ import java.util.ArrayList;
  * 자바 학습 지식 한 개를 나타내는 핵심 데이터 모델 클래스입니다.
  * 모든 지식은 ID, 제목, 카테고리, 설명 리스트를 가지며 프로그램 전체로 유통됩니다.
  */
-public class Concept {
+public class Concept implements Serializable {
     //  각 지식을 고유하게 식별하고 상세 내용을 찾기 위한 키(Key)로 사용함
     // ConceptRepository의 Map에서 데이터를 넣고 뺄 때 기준점이 됨
     private String id;
+
+    private static final long serialVersionUID = 1l; // 새로운 서버 구축
 
     // 사용자가 왼쪽 리스트에서 보고 클릭할 지식의 명칭임
     // SearchService에서 검색 대상이 되며, JList 화면에 직접적으로 노출됨
@@ -35,7 +37,6 @@ public class Concept {
         this.title = title;
         this.category = category;
     }
-
     /**
      * 지식의 본문 내용을 한 줄씩 추가하기 위해 작성함
      *  메서드 체이닝(return this)을 지원하여 데이터를 연속적으로 넣기 편하게 구성함
