@@ -146,7 +146,6 @@ public class MainWikiFrame extends JFrame {
 
         // 사용자가 창 크기를 전체 화면으로 키울 때, 각 영역이 늘어나는 비율을 결정함
         // 0.3으로 설정하여 왼쪽 리스트 영역도 30%만큼 함께 커지게 유도함
-        // 이 수치는 상단 버튼들이 좁아져서 '...'으로 생략되는 현상을 방지하는 핵심 설정임
         splitPane.setResizeWeight(0.3);
         splitPane.setDividerLocation(320); // 초기 실행 시 구분선의 위치를 지정함
 
@@ -166,7 +165,7 @@ public class MainWikiFrame extends JFrame {
     }
 
     /**
-     * 선택된 지식(Concept) 객체를 받아와서 우측 상세 패널에 실시간으로 그려내는 핵심 로직임
+     * 선택된 지식(Concept) 객체를 받아와서 우측 상세 패널에 그려넣음
      * 문자열 데이터를 폰트, 색상, 정렬 등을 통해 시각적인 문서 형태로 변환함
      */
     private void displayDetail(Concept selected) {
@@ -178,7 +177,7 @@ public class MainWikiFrame extends JFrame {
         detailPanel.setBackground(Color.WHITE);
         detailPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 30, 40));
 
-        // 지식의 제목을 가장 크고 굵게 출력하여 사용자의 시선을 집중시킴
+        // 지식의 제목을 가장 크고 굵게 출력!
         JLabel titleLabel = new JLabel(selected.getTitle());
         titleLabel.setFont(new Font("맑은 고딕", Font.BOLD, 28));
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -215,7 +214,6 @@ public class MainWikiFrame extends JFrame {
                 label.setForeground(new Color(44, 62, 80));
                 detailPanel.add(Box.createVerticalStrut(10));
             } else if (line.startsWith("[코드]")) {
-                // [수정] '[코드]' 텍스트를 제거하고 폰트를 한글 지원 폰트로 교체
                 String codeText = line.replace("[코드] ", "");
                 label.setText(codeText);
                 label.setForeground(Color.BLUE);
@@ -252,11 +250,24 @@ public class MainWikiFrame extends JFrame {
      * 카테고리 버튼 클릭 시 호출되며, 전체 데이터 중 해당 카테고리만 골라 리스트로 전달함
      * 이 작업 결과는 즉시 왼쪽 인덱스 목록의 변화로 이어짐
      */
+    /**
+     * 카테고리 필터링 로직입니다.
+     * [이유] '전체' 보기에서도 '메소드' 항목은 제외하여 순수한 자바 개념만 노출하기 위함입니다.
+     * [영향] 이제 '메소드 집합' 버튼을 눌렀을 때만 메소드 관련 데이터가 리스트에 나타납니다.
+     */
     private void filterList(String category) {
         List<Concept> all = repository.findAll();
-        listModel.clear(); // 기존 목록을 비우고 새로 채움
+        listModel.clear();
+
         for (Concept c : all) {
-            if (category.equals("전체") || c.getCategory().equals(category)) {
+            // [수정 포인트]
+            if (category.equals("전체")) {
+                // 전체를 선택했을 때는 '메소드' 카테고리가 아닌 것들만 리스트에 추가한다.
+                if (!c.getCategory().equals("메소드")) {
+                    listModel.addElement(c);
+                }
+            } else if (c.getCategory().equals(category)) {
+                // 기초, 중급, 고급 등 특정 카테고리를 선택했을 때 해당 데이터만 추가한다.
                 listModel.addElement(c);
             }
         }
