@@ -774,8 +774,6 @@ public class ConceptRepository {
                 .addLine("[설명] 1. 원본 데이터를 변경하지 않는 읽기 전용이며, 중간 연산은 최종 연산이 호출될 때까지 실행을 미루는 지연 실행을 한다.")
                 .addLine("[설명] 2. 병렬 스트림(parallelStream)을 활용하면 대량의 데이터를 멀티코어 환경에서 초고속으로 처리할 수 있다."));
 
-
-
         addConcept(new Concept("A106", "Optional과 Null 안전 설계", "고급")
                 .addLine("[설명] 존재할 수도 있고 아닐 수도 있는 객체를 감싸는 래퍼 클래스로, NPE(NullPointer)를 방지하는 현대적 설계이다.")
                 .addLine("• [메서드] ofNullable(): null 가능 객체 생성 / orElseThrow(): 값이 없으면 예외 발생")
@@ -810,8 +808,6 @@ public class ConceptRepository {
                 .addLine("[코드] // JVM 옵션 설정 예: -Xms512m (초기 힙 크기) -Xmx1024m (최대 힙 크기)")
                 .addLine("[설명] 1. 힙은 모든 스레드가 공유하며 GC가 관리하지만, 스택은 각 스레드마다 독립적으로 생성된다.")
                 .addLine("[설명] 2. 이 영역의 동작 방식을 이해하는 것이 메모리 릭(Leak)을 잡고 대규모 서비스를 튜닝하는 지름길이다."));
-
-
 
         addConcept(new Concept("A111", "스레드 우선순위와 스케줄링", "고급")
                 .addLine("[설명] 스케줄러가 여러 스레드 중 어떤 것을 먼저 실행할지 결정하는 기준값이다.")
