@@ -10,7 +10,7 @@ public class WikiClient {
     private ObjectOutputStream out;
     private ObjectInputStream in;
     private MainWikiFrame mainFrame;
-
+    // 192.168.0.34 에 접속해야해용
     public WikiClient(MainWikiFrame mainFrame) {
         this.mainFrame = mainFrame;
     }

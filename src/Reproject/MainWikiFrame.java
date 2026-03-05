@@ -23,7 +23,7 @@ public class MainWikiFrame extends JFrame {
         this.searchService = searchService;
         this.repository = repository;
 
-        setTitle("Java Wiki - 실시간 협업 시스템");
+        setTitle("Java Wiki - 실시간 협업 자바 학습 시스템");
         setSize(1100, 850);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
