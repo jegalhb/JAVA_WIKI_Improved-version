@@ -78,6 +78,8 @@ public class MainWikiFrame extends JFrame {
 
         JButton searchButton = new JButton("검색");
         searchButton.addActionListener(e -> performSearch());
+        searchField.addActionListener(e -> performSearch()); // 엔터로 검색시 가능하도록
+        getRootPane().setDefaultButton(searchButton);
         topPanel.add(searchButton, BorderLayout.EAST);
 
         add(topPanel, BorderLayout.NORTH);
