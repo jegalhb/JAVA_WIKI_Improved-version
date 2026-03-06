@@ -141,3 +141,115 @@ System.out.println()
 1. `UTF-8` 인코딩 통일 및 한글 깨짐 재점검
 2. 데이터 저장 영속화(JSON/파일/DB) 추가
 3. 네트워크 예외 재시도/재연결 UX 개선
+
+## UI/UX 설계서 (README 버전)
+
+> 공유된 화면설계 캡처 레이아웃을 README 문서로 최대한 유사하게 재구성한 버전입니다.
+
+### 1) 설계 메타 정보 (Design Header)
+
+| Page Title | Screen ID | Author | Date |
+|---|---|---|---|
+| Java Wiki 실시간 협업 시스템 | `JAVA_WIKI_T1_기초구조` | 진강준 | 2026-03-05 |
+
+| Canvas Size | Layout Ratio | Font | Color |
+|---|---|---|---|
+| 1100 x 850 | 좌측 40% : 우측 60% | 맑은 고딕, Consolas | `#3498db`, `#e74c3c`, `#ecf0f1` |
+
+### 2) 3단계 화면 패널 (Wireframe -> Interactive -> Production)
+
+<table>
+  <tr>
+    <th style="background:#e74c3c;color:white;">초안 A - 기초 구조 (Wireframe)</th>
+    <th style="background:#ff8a00;color:white;">기능 추가 (Interactive)</th>
+    <th style="background:#2e86de;color:white;">완성본 (Production)</th>
+  </tr>
+  <tr>
+    <td>
+      <b>목표</b><br/>
+      검색/목록/상세/채팅의 기본 구조를 먼저 고정<br/><br/>
+      <b>화면 구성</b><br/>
+      - 상단: 검색창 + 버튼 영역<br/>
+      - 좌측: 카테고리 + 지식 목록<br/>
+      - 우측: 상세 정보 패널<br/>
+      - 하단: 협업 채팅 패널
+    </td>
+    <td>
+      <b>목표</b><br/>
+      사용자 액션(검색/추가/삭제/필터) 동작 완성<br/><br/>
+      <b>주요 동작</b><br/>
+      - Enter 검색 + 버튼 검색 동작 일치<br/>
+      - 카테고리 필터링<br/>
+      - 지식 추가/삭제 후 목록 즉시 갱신<br/>
+      - 상세 패널 스크롤/렌더링 안정화
+    </td>
+    <td>
+      <b>목표</b><br/>
+      실시간 협업 + 저장 정책 + 운영 안정화<br/><br/>
+      <b>운영 관점</b><br/>
+      - 서버/클라이언트 이벤트 동기화<br/>
+      - 채팅 브로드캐스트<br/>
+      - 저장 시점 정책 확정(즉시/종료)<br/>
+      - 데이터 파일 품질(인코딩/포맷) 고정
+    </td>
+  </tr>
+</table>
+
+### 3) 기능 영역 상세 Description
+
+#### A. 지식 검색 + 목록 구성
+- 검색 입력: 키워드 입력 후 Enter 또는 검색 버튼
+- 필터: `전체/기초/중급/고급/메소드`
+- 목록: 제목 기반 리스트 출력
+- 상세: 제목, 카테고리, 본문 라인([설명], [코드]) 렌더링
+- 관련 코드: `MainWikiFrame`, `SearchService`
+
+#### B. 기능 추가/수정/삭제
+- `지식 추가/수정`: `ConceptEditFrame`에서 ID/제목/카테고리/본문 입력
+- `저장`: `onDataAdded()` 경유로 저장소 반영 + (온라인 시) 서버 전파
+- `삭제`: 선택 항목 확인 후 삭제 처리
+- 관련 코드: `ConceptEditFrame`, `MainWikiFrame`, `ConceptRepository`
+
+#### C. 협업 (실시간)
+- 이벤트: `ADD`, `DELETE`, `LIST`, `CHAT`
+- 서버: 수신 이벤트 반영 후 브로드캐스트
+- 클라이언트: REFRESH 수신 시 LIST 재요청, 채팅 메시지 반영
+- 관련 코드: `WikiServer`, `WikiClient`
+
+### 4) Functional Specification (확장)
+
+| 기능 | 입력 | 처리 | 출력 | 예외/주의 |
+|---|---|---|---|---|
+| 검색 | query 문자열 | 유사도 점수 계산 후 정렬 | `List<Concept>` | 빈 query는 전체 목록 |
+| 카테고리 필터 | category | category match 필터 | 필터링 목록 | `전체`에서 메소드 제외 정책 여부 확인 |
+| 추가/수정 | ID/제목/카테고리/본문 | Concept 생성/덮어쓰기 | 목록 즉시 갱신 | ID 중복 시 수정으로 동작 |
+| 삭제 | Concept ID | 저장소 remove | 목록 갱신 | 선택값 없으면 안내 메시지 |
+| 서버 동기화 | ADD/DELETE/LIST/CHAT | 서버 반영 + 브로드캐스트 | 클라이언트 상태 동기화 | 연결 끊김/재접속 UX 필요 |
+| 파일 저장 | `database` | `data.txt` 직렬화 | 로컬 파일 갱신 | 인코딩/경로/저장시점 정책 필요 |
+
+### 5) Check Point (상태 기반)
+
+| 구분 | 체크 항목 | 상태 |
+|---|---|---|
+| 초안 A | 2패널 + 상세/채팅 기본 배치 | 완료 |
+| 초안 A | 검색/목록/상세 기본 연결 | 완료 |
+| 기능추가 | Enter 검색과 버튼 검색 결과 일치 | 완료 |
+| 기능추가 | 추가/삭제 후 목록 반영 | 완료 |
+| 기능추가 | 입력 유효성 메시지 정교화 | 진행 |
+| 완성본 | 실시간 동기화(ADD/DELETE/CHAT) | 완료 |
+| 완성본 | 서버 저장 책임 일원화 | 진행 |
+| 완성본 | `data.txt` 인코딩/텍스트 품질 정리 | 진행 |
+| 완성본 | 재연결/오류 UX | 대기 |
+
+### 6) 화면설계 -> 구현 파일 맵
+- 메인 화면: `src/Reproject/MainWikiFrame.java`
+- 편집 화면: `src/Reproject/ConceptEditFrame.java`
+- 검색 엔진: `src/Reproject/SearchService.java`
+- 저장소/파일 IO: `src/Reproject/ConceptRepository.java`
+- 실시간 협업: `src/Reproject/WikiServer.java`, `src/Reproject/WikiClient.java`
+
+### 7) 운영 규칙 (권장)
+1. 온라인 모드에서 저장은 서버에서만 수행
+2. `data.txt` 포맷 계약(ID/제목/카테고리/본문/구분자 `---`) 고정
+3. 체크포인트 상태표를 커밋 메시지와 함께 갱신
+
