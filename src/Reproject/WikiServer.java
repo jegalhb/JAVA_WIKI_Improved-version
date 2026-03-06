@@ -45,6 +45,7 @@ public class WikiServer {
         } catch (IOException e) {
             System.err.println("서버 에러: " + e.getMessage());
         }
+        repository.save();
     }
 
     private class ClientHandler extends Thread {

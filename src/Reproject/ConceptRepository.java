@@ -12,12 +12,16 @@ public class ConceptRepository {
         // 내부 initData() -> initBasicConcepts() 등으로 실행 흐름
         initData();
         initMethod();
+        readFile("data.txt", database);
     }
 
     private void initData() {
         initBasicConcepts();       // 기초 (B01~B50)
         initIntermediateConcepts(); // 중급 (I51~I100)
         initAdvancedConcepts();     // 고급 (A101~A130)
+    }
+    public void save() {
+        writeFile("data.txt", database); // 프로그램이 종료되었을 때 실행? JFream콜백함수 활용해서 해야함
     }
 
     public List<Concept> findMethodAll() {
@@ -1297,6 +1301,18 @@ public class ConceptRepository {
         return database.get(id);
     }
 
+    private void readFile(String filename, Map<String, Concept> database) {
+        System.out.println("read file");
+        /* //io를 통해서 구현
+         * 파일을 읽고 내용대로 Concept 객체를 생성해서 database에 추가
+         */
+    }
+    private void writeFile(String filename, Map<String, Concept> database) {
+        System.out.println("write file");
+        /*
+         * database의 객체의 내용대로 파일에 작성
+         */
+    }
     public List<Concept> findAll() {
         // 프로그램 시작 시 초기 전체 목록을 제공하기 위함!
         // Main클래스에서 화면 나올 시 MainWikiFrame으로 전달

@@ -3,6 +3,8 @@ package Reproject;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.List;
 
 public class MainWikiFrame extends JFrame {
@@ -25,7 +27,7 @@ public class MainWikiFrame extends JFrame {
 
         setTitle("Java Wiki - 실시간 협업 자바 학습 시스템");
         setSize(1100, 850);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
 
         initTopPanel();
@@ -34,6 +36,13 @@ public class MainWikiFrame extends JFrame {
 
         updateList(repository.findAll());
         setLocationRelativeTo(null);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent e) {
+                super.windowClosed(e);
+                repository.save();
+            }
+        });
     }
 
     public void setClient(WikiClient client) {
