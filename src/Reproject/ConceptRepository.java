@@ -5,15 +5,19 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class ConceptRepository {
-    private final Map<String, Concept> database = new HashMap<>();
     private static final String DATA_FILE = "data.txt";
+    private static final String CAT_METHOD = "\uBA54\uC18C\uB4DC";
+    private static final String CAT_BASIC = "\uAE30\uCD08";
+    private static final String CAT_MID = "\uC911\uAE09";
+    private static final String CAT_ADV = "\uACE0\uAE09";
+
+    private final Map<String, Concept> database = new HashMap<>();
 
     public ConceptRepository() {
         initData();
         initMethod();
         readFile(DATA_FILE, database);
 
-        // 파일이 없거나 비어 있으면 최소 기본값을 넣고 즉시 저장한다.
         if (database.isEmpty()) {
             seedDefaultConcepts();
             save();
@@ -21,20 +25,20 @@ public class ConceptRepository {
     }
 
     private void initData() {
-        // 기존 구조 유지용(현재는 파일 기반 데이터 사용)
+        // kept for compatibility with previous structure
     }
 
     private void initMethod() {
-        // 기존 구조 유지용(현재는 파일 기반 데이터 사용)
+        // kept for compatibility with previous structure
     }
 
     public synchronized void save() {
-            writeFile(DATA_FILE, database);
+        writeFile(DATA_FILE, database);
     }
 
     public synchronized List<Concept> findMethodAll() {
         return database.values().stream()
-                .filter(c -> "메소드".equals(c.getCategory()))
+                .filter(c -> CAT_METHOD.equals(c.getCategory()))
                 .sorted(Comparator.comparing(Concept::getTitle))
                 .toList();
     }
@@ -79,10 +83,9 @@ public class ConceptRepository {
                 }
                 block.add(line);
             }
-
             parseAndPut(block, database);
         } catch (IOException e) {
-            System.err.println("readFile 오류: " + e.getMessage());
+            System.err.println("readFile error: " + e.getMessage());
         }
     }
 
@@ -100,7 +103,7 @@ public class ConceptRepository {
 
         String id = lines.get(0);
         String title = lines.get(1);
-        String category = normalizeCategory(lines.get(2));
+        String category = normalizeCategory(lines.get(2), id);
         if (id.isEmpty() || title.isEmpty() || category.isEmpty()) return;
 
         Concept concept = new Concept(id, title, category);
@@ -134,27 +137,37 @@ public class ConceptRepository {
                 writer.newLine();
             }
         } catch (IOException e) {
-            System.err.println("writeFile 오류: " + e.getMessage());
+            System.err.println("writeFile error: " + e.getMessage());
         }
     }
 
-    private String normalizeCategory(String category) {
-        if (category == null) return "";
-        String c = category.trim();
-        if (c.equalsIgnoreCase("method")) return "메소드";
-        if (c.equalsIgnoreCase("basic")) return "기초";
-        if (c.equalsIgnoreCase("intermediate")) return "중급";
-        if (c.equalsIgnoreCase("advanced")) return "고급";
-        return c;
+    private String normalizeCategory(String category, String id) {
+        String c = category == null ? "" : category.trim().toLowerCase(Locale.ROOT);
+
+        if (c.contains("method") || c.contains("\uBA54\uC18C\uB4DC")) return CAT_METHOD;
+        if (c.contains("basic") || c.contains("\uAE30\uCD08")) return CAT_BASIC;
+        if (c.contains("intermediate") || c.contains("\uC911\uAE09")) return CAT_MID;
+        if (c.contains("advanced") || c.contains("\uACE0\uAE09")) return CAT_ADV;
+
+        return categoryById(id);
+    }
+
+    private String categoryById(String id) {
+        if (id == null || id.isEmpty()) return CAT_METHOD;
+        char p = Character.toUpperCase(id.charAt(0));
+        if (p == 'B') return CAT_BASIC;
+        if (p == 'I') return CAT_MID;
+        if (p == 'A') return CAT_ADV;
+        return CAT_METHOD;
     }
 
     private void seedDefaultConcepts() {
-        addConcept(new Concept("M01", "System.out.println()", "메소드")
-                .addLine("콘솔창에 데이터를 출력하고 줄을 바꾼다. 가장 기본적인 디버깅 도구이다.")
-                .addLine("[코드] System.out.println(\"Hello Java\");"));
+        addConcept(new Concept("M01", "System.out.println()", CAT_METHOD)
+                .addLine("[\uC124\uBA85] Console output with newline.")
+                .addLine("[\uCF54\uB4DC] System.out.println(\"Hello Java\");"));
 
-        addConcept(new Concept("M02", "Scanner.nextLine()", "메소드")
-                .addLine("사용자가 엔터를 칠 때까지 입력한 문자열 전체를 읽어온다.")
-                .addLine("[코드] String str = sc.nextLine();"));
+        addConcept(new Concept("M02", "Scanner.nextLine()", CAT_METHOD)
+                .addLine("[\uC124\uBA85] Read full line until Enter.")
+                .addLine("[\uCF54\uB4DC] String str = sc.nextLine();"));
     }
 }
