@@ -102,13 +102,15 @@ public class MainWikiFrame extends JFrame {
 
     private void initCenterPanel() {
         JPanel leftPanel = new JPanel(new BorderLayout());
+        leftPanel.setMinimumSize(new Dimension(420, 0));
         JPanel filterPanel = new JPanel(new GridLayout(1, 5, 5, 5));
         filterPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 
         String[] categories = {"전체", "기초", "중급", "고급", "메소드"};
         for (String cat : categories) {
             JButton btn = new JButton(cat);
-            btn.setFont(new Font("맑은 고딕", Font.BOLD, 12));
+            btn.setFont(new Font("맑은 고딕", Font.BOLD, 11));
+            btn.setMargin(new Insets(2, 6, 2, 6));
             btn.addActionListener(e -> {
                 currentCategory = cat;
                 filterList(cat);
@@ -154,8 +156,8 @@ public class MainWikiFrame extends JFrame {
         rightPanel.add(chatPanel, BorderLayout.SOUTH);
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
-        splitPane.setResizeWeight(0.3);
-        splitPane.setDividerLocation(320);
+        splitPane.setResizeWeight(0.4);
+        splitPane.setDividerLocation(420);
 
         add(splitPane, BorderLayout.CENTER);
     }
