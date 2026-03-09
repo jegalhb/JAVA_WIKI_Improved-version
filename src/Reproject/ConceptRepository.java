@@ -6,10 +6,10 @@ import java.util.*;
 
 public class ConceptRepository {
     private static final String DATA_FILE = "data.txt";
-    private static final String CAT_METHOD = "\uBA54\uC18C\uB4DC";
-    private static final String CAT_BASIC = "\uAE30\uCD08";
-    private static final String CAT_MID = "\uC911\uAE09";
-    private static final String CAT_ADV = "\uACE0\uAE09";
+    private static final String CAT_METHOD = "메소드";
+    private static final String CAT_BASIC = "기초";
+    private static final String CAT_MID = "중급";
+    private static final String CAT_ADV = "고급";
 
     private final Map<String, Concept> database = new HashMap<>();
 
@@ -144,10 +144,10 @@ public class ConceptRepository {
     private String normalizeCategory(String category, String id) {
         String c = category == null ? "" : category.trim().toLowerCase(Locale.ROOT);
 
-        if (c.contains("method") || c.contains("\uBA54\uC18C\uB4DC")) return CAT_METHOD;
-        if (c.contains("basic") || c.contains("\uAE30\uCD08")) return CAT_BASIC;
-        if (c.contains("intermediate") || c.contains("\uC911\uAE09")) return CAT_MID;
-        if (c.contains("advanced") || c.contains("\uACE0\uAE09")) return CAT_ADV;
+        if (c.contains("method") || c.contains("메소드")) return CAT_METHOD;
+        if (c.contains("basic") || c.contains("기초")) return CAT_BASIC;
+        if (c.contains("intermediate") || c.contains("중급")) return CAT_MID;
+        if (c.contains("advanced") || c.contains("고급")) return CAT_ADV;
 
         return categoryById(id);
     }
@@ -163,11 +163,11 @@ public class ConceptRepository {
 
     private void seedDefaultConcepts() {
         addConcept(new Concept("M01", "System.out.println()", CAT_METHOD)
-                .addLine("[\uC124\uBA85] Console output with newline.")
-                .addLine("[\uCF54\uB4DC] System.out.println(\"Hello Java\");"));
+                .addLine("[설명] Console output with newline.")
+                .addLine("[코드] System.out.println(\"Hello Java\");"));
 
         addConcept(new Concept("M02", "Scanner.nextLine()", CAT_METHOD)
-                .addLine("[\uC124\uBA85] Read full line until Enter.")
-                .addLine("[\uCF54\uB4DC] String str = sc.nextLine();"));
+                .addLine("[설명] Read full line until Enter.")
+                .addLine("[코드] String str = sc.nextLine();"));
     }
 }

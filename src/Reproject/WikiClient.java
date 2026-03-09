@@ -32,12 +32,16 @@ public class WikiClient {
             String portStr = JOptionPane.showInputDialog(frame, "접속할 포트 번호를 입력하세요:", "9999");
 
             if (serverIp != null && portStr != null) {
-                int port = Integer.parseInt(portStr);
-                String nickname = JOptionPane.showInputDialog(frame, "닉네임을 입력하세요:", "나");
-                WikiClient client = new WikiClient(frame, nickname);
-                frame.setClient(client);
-                // [이동] 입력받은 주소와 포트로 연결 시도
-                client.start(serverIp, port);
+                try { //
+                    int port = Integer.parseInt(portStr.trim());
+                    String nickname = JOptionPane.showInputDialog(frame, "닉네임을 입력하세요", "guest");
+                    WikiClient client = new WikiClient(frame, nickname);
+                    frame.setClient(client);
+                    client.start(serverIp, port);
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(frame, "포트는 숫자만 입력할 수 있습니다.");
+                    frame.appendChat(">> 잘못된 포트 입력으로 오프라인 모드로 시작합니다.");
+                }
             } else {
                 frame.appendChat(">> 접속 정보가 입력되지 않아 오프라인 모드로 시작합니다.");
             }

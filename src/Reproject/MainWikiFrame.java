@@ -20,6 +20,7 @@ public class MainWikiFrame extends JFrame {
 
     private JTextArea chatArea;
     private JTextField chatInput;
+    private JLabel statusLabel;
 
     public MainWikiFrame(SearchService searchService, ConceptRepository repository) {
         this.searchService = searchService;
@@ -40,13 +41,18 @@ public class MainWikiFrame extends JFrame {
             @Override
             public void windowClosed(WindowEvent e) {
                 super.windowClosed(e);
-                repository.save();
+                if (client == null) {
+                    repository.save();
+                }
             }
         });
     }
 
     public void setClient(WikiClient client) {
         this.client = client;
+        if (client != null) {
+            setStatusText("오프라인 모드");
+        }
     }
 
     private void initTopPanel() {
@@ -236,9 +242,21 @@ public class MainWikiFrame extends JFrame {
     }
 
     private void performSearch() {
-        // 앞뒤 공백을 제거해 Enter/버튼 검색 결과가 항상 동일하게 나오도록.
         String keyword = searchField.getText().trim();
-        updateList(searchService.search(keyword));
+        List<Concept> results = searchService.search(keyword);
+        updateList(results);
+
+        if (!keyword.isEmpty() && results.isEmpty()) {
+            Concept best = searchService.getBestMatch(keyword);
+            if (best != null) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "검색 결과가 없습니다. 추천어: " + best.getTitle(),
+                        "검색 안내",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+            }
+        }
     }
 
     public void updateList(List<Concept> concepts) {
@@ -263,7 +281,14 @@ public class MainWikiFrame extends JFrame {
     }
 
     private void initStatusBar() {
-        add(new JLabel(" 시스템 가동 중"), BorderLayout.SOUTH);
+        statusLabel = new JLabel("오프라인모드");
+        add(statusLabel, BorderLayout.SOUTH);
+    }
+
+    private void setStatusText(String text) {
+        if (statusLabel != null) {
+            statusLabel.setText(" " + text);
+        }
     }
 
     public void onDataAdded(Concept c) {
