@@ -92,6 +92,10 @@ flowchart LR
 - 지식추가/수정버튼 수정기능 추가 + 지식추가 시 새로운 JFream 구성 , 코드 하이라이트 주석 보강
 
 6. 2026-03-10
+- 개발 README_md작성 및 최신화 
+- README 구조개선 향후 계획 최신화 완료
+- LevenshteinDistance 로직 예외처리 보강
+- JSON 포멧전환준비
 
 ## 데이터 저장/동기화 정책
 - `ConceptRepository`는 시작 시 `data.txt`를 읽어서 메모리(Map)로 로드합니다.
