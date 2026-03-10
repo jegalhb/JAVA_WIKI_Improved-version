@@ -109,6 +109,9 @@ public class SearchService {
      * 이 계산 결과는 최종적으로 검색 엔진이 '유사한 단어'라고 판단하는 기준이 됨
      */
     private int computeLevenshteinDistance(String lhs, String rhs) {
+        if (lhs==null || rhs == null){
+            throw new IllegalArgumentException("메서드 입력값이 잘못됐습니다.");
+        }
         int[][] distance = new int[lhs.length() + 1][rhs.length() + 1];
 
         for (int i = 0; i <= lhs.length(); i++) distance[i][0] = i;
