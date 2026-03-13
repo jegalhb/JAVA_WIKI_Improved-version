@@ -343,31 +343,36 @@ sequenceDiagram
 
 ### A. 유저 플로우 (캡처용)
 ```mermaid
-flowchart TD
-    U0([사용자 시작]) --> U1[앱 실행]
-    U1 --> U2{온라인 모드 선택}
+flowchart LR
+    A0([사용자 시작]) --> A1[앱 실행]
+    A1 --> A2{온라인 모드}
 
-    U2 -- 예 --> U3[서버 연결 및 데이터 동기화]
-    U2 -- 아니오 --> U4[로컬 JSON 데이터 로드]
+    A2 -- 예 --> A3[서버 연결 및 동기화]
+    A2 -- 아니오 --> A4[로컬 JSON 로드]
+    A3 --> A5[메인 진입]
+    A4 --> A5
 
-    U3 --> U5[메인 화면 진입]
-    U4 --> U5
+    A5 --> B1[/검색어 입력/]
+    B1 --> B2[자동완성 확인]
+    B2 --> B3{추천 선택}
+    B3 -- 예 --> B4[정확 1건 표시]
+    B3 -- 아니오 --> B5[일반 검색]
+    B4 --> C1[상세 확인]
+    B5 --> C1
 
-    U5 --> U6[/검색어 입력/]
-    U6 --> U7[자동완성 제안 확인]
-    U7 --> U8{추천 항목 선택}
+    C1 --> C2{수정 작업 실행}
+    C2 -- 예 --> C3[추가 수정 삭제 반영]
+    C2 -- 아니오 --> C4([종료])
+    C3 --> C5[목록 갱신]
+    C5 --> B1
 
-    U8 -- 예 --> U9[정확 항목 1건 표시]
-    U8 -- 아니오 --> U10[일반 검색 결과 표시]
+    classDef startEnd fill:#e9f7ef,stroke:#2e7d32,color:#1b5e20,stroke-width:1.4px;
+    classDef process fill:#eef4ff,stroke:#2f5ea8,color:#183b73,stroke-width:1.2px;
+    classDef decision fill:#fff4e5,stroke:#b26a00,color:#7a4300,stroke-width:1.2px;
 
-    U9 --> U11[상세 내용 확인]
-    U10 --> U11
-
-    U11 --> U12{추가 수정 삭제 실행}
-    U12 -- 예 --> U13[저장 반영 및 목록 갱신]
-    U12 -- 아니오 --> U14([종료])
-
-    U13 --> U6
+    class A0,C4 startEnd;
+    class A1,A3,A4,A5,B1,B2,B4,B5,C1,C3,C5 process;
+    class A2,B3,C2 decision;
 ```
 
 **설명 문구 (슬라이드 우측 Description 용)**
@@ -461,3 +466,71 @@ flowchart LR
 
 #### C-3. 한 줄 결론
 `JAVA_WIKI는 학습 정보 탐색 경험을 빠르고 정확하게 만드는 방향으로 개선되었습니다.`
+---
+
+## 부록. PPT 캡처용 다이어그램 (최종)
+
+### A. 유저 플로우 (좌→우, PPT용)
+```mermaid
+flowchart LR
+    A([시작]) --> B[앱 실행]
+    B --> C{온라인 모드}
+    C -- 예 --> D[서버 연결 및 동기화]
+    C -- 아니오 --> E[로컬 JSON 로드]
+    D --> F[메인 진입]
+    E --> F
+
+    F --> G[/검색어 입력/]
+    G --> H[추천 목록 표시]
+    H --> I{추천 항목 선택}
+    I -- 예 --> J[선택 항목 단일 결과 표시]
+    I -- 아니오 --> K[일반 검색 결과 표시]
+
+    J --> L[상세 보기]
+    K --> L
+    L --> M{추가/수정/삭제}
+    M -- 예 --> N[저장 및 목록 갱신]
+    M -- 아니오 --> O([종료])
+    N --> G
+
+    classDef startEnd fill:#e9f7ef,stroke:#2e7d32,color:#1b5e20,stroke-width:1.4px;
+    classDef process fill:#eef4ff,stroke:#2f5ea8,color:#183b73,stroke-width:1.2px;
+    classDef decision fill:#fff4e5,stroke:#b26a00,color:#7a4300,stroke-width:1.2px;
+    class A,O startEnd;
+    class B,D,E,F,G,H,J,K,L,N process;
+    class C,I,M decision;
+```
+
+캡처 권장 설정 (PPT 선명도):
+- 브라우저 확대율 `125%~150%`에서 다이어그램 캡처
+- 캡처 이미지는 슬라이드 표시 크기의 `최소 2배` 해상도로 저장
+- PPT 삽입 후 `자르기`만 사용하고, 과도한 확대는 피하기
+- 가능하면 PNG 대신 SVG 내보내기(사용 환경 지원 시) 후 삽입
+
+### B. 로직 프로세스 (처음~끝 전체 분기, 세로형)
+```mermaid
+flowchart TD
+    A([시작]) --> B{온라인 모드}
+    B -- 예 --> C[서버 동기화]
+    B -- 아니오 --> D[로컬 JSON 로드]
+    C --> E[메인 화면]
+    D --> E
+
+    E --> F[/검색어 입력/]
+    F --> G[추천 목록 갱신]
+    G --> H{추천 선택 여부}
+    H -- 예 --> I[선택 항목만 결과 표시]
+    H -- 아니오 --> J[일반 검색 실행]
+
+    I --> K[상세 보기]
+    J --> K
+    K --> L{CRUD 실행 여부}
+    L -- 아니오 --> M([종료])
+    L -- 예 --> N[저장 처리]
+    N --> O{온라인 모드}
+    O -- 예 --> P[서버 전파]
+    O -- 아니오 --> Q[로컬 상태 갱신]
+    P --> R[트리 갱신]
+    Q --> R
+    R --> F
+```
