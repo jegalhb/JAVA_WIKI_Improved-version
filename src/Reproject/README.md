@@ -243,6 +243,59 @@ sequenceDiagram
     MW->>SP: setViewportView(detailPanel)
     MW->>SP: scrollTop + revalidate/repaint
 ```
+
+### 5-9. Logic process (프로그램 맞춤 플로우)
+```mermaid
+flowchart TD
+    A([Start]) --> B[Main 실행]
+    B --> C{서버 연결 모드?}
+
+    C -- Yes --> D[WikiClient 연결]
+    C -- No --> E[오프라인 모드]
+
+    D --> F[JSON/서버 데이터 로드]
+    E --> F
+
+    F --> G[메인 화면 진입]
+    G --> H[검색어 입력]
+    H --> I[자동완성 갱신
+(DocumentListener + debounce)]
+    I --> J{추천 항목 존재?}
+
+    J -- No --> K[일반 검색 수행
+performSearch]
+    J -- Yes --> L{추천 선택?}
+
+    L -- Yes --> M[정확 1건 렌더링
+acceptSuggestionSelection]
+    L -- No --> K
+
+    K --> N{검색 결과 존재?}
+    N -- No --> O[getBestMatch 안내]
+    N -- Yes --> P[검색결과 노드 렌더링
+renderTree(searchMode=true)]
+
+    M --> Q[상세 패널 동기화
+displayDetail]
+    P --> Q
+    O --> H
+
+    Q --> R{추가/수정/삭제 작업?}
+    R -- Yes --> S[Repository 반영]
+    S --> T{온라인 모드?}
+    T -- Yes --> U[서버로 ADD/UPDATE/DELETE 전파]
+    T -- No --> V[로컬 상태만 갱신]
+    U --> W[목록 refresh]
+    V --> W
+    W --> H
+
+    R -- No --> X([End])
+```
+
+프로세스 포인트
+- 추천 선택 경로는 `search()`를 다시 타지 않고, 선택 항목 단건 렌더링으로 분리됩니다.
+- 검색 모드에서는 `검색결과` 노드를 먼저 구성해 카테고리 확장 없이 결과를 확인할 수 있습니다.
+- CRUD 이후에는 온라인/오프라인 분기를 통해 서버 전파 여부가 달라집니다.
 ## 6. 실행 방법
 1. 서버 실행: `Reproject.WikiServer`
 2. 클라이언트 실행: `Reproject.WikiClient`
