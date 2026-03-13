@@ -3,16 +3,21 @@ package Reproject;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -29,6 +34,8 @@ public class MainWikiFrame extends JFrame {
     private static final Color DANGER = new Color(198, 62, 62);
     private static final Color TEXT_MAIN = new Color(28, 36, 48);
     private static final Color TEXT_MUTED = new Color(95, 108, 125);
+    private static final int AUTO_COMPLETE_DELAY_MS = 180;
+    private static final int AUTO_COMPLETE_LIMIT = 8;
 
     private final SearchService searchService;
     private final ConceptRepository repository;
@@ -43,6 +50,11 @@ public class MainWikiFrame extends JFrame {
     private JTextArea chatArea;
     private JTextField chatInput;
     private JLabel statusLabel;
+    private DefaultListModel<Concept> suggestionModel;
+    private JList<Concept> suggestionList;
+    private JPopupMenu suggestionPopup;
+    private Timer autoCompleteTimer;
+    private boolean suppressAutoCompleteUpdate;
 
     public MainWikiFrame(SearchService searchService, ConceptRepository repository) {
         this.searchService = searchService;
@@ -147,8 +159,15 @@ public class MainWikiFrame extends JFrame {
         JButton searchButton = new JButton("검색");
         styleAccentOutlineButton(searchButton);
         searchButton.addActionListener(e -> performSearch());
-        searchField.addActionListener(e -> performSearch());
+        searchField.addActionListener(e -> {
+            if (suggestionPopup != null && suggestionPopup.isVisible() && suggestionList.getSelectedIndex() >= 0) {
+                acceptSuggestionSelection();
+            } else {
+                performSearch();
+            }
+        });
         getRootPane().setDefaultButton(searchButton);
+        initAutoComplete();
 
         topPanel.add(controlPanel, BorderLayout.WEST);
         topPanel.add(searchField, BorderLayout.CENTER);
@@ -157,6 +176,162 @@ public class MainWikiFrame extends JFrame {
         add(topPanel, BorderLayout.NORTH);
     }
 
+
+    // Initializes autocomplete UI and keyboard behavior while keeping IME input stable.
+    private void initAutoComplete() {
+        suggestionModel = new DefaultListModel<>();
+        suggestionList = new JList<>(suggestionModel);
+        suggestionList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        suggestionList.setFixedCellHeight(28);
+        suggestionList.setFont(new Font("Dialog", Font.PLAIN, 13));
+        suggestionList.setCellRenderer((list, value, index, isSelected, cellHasFocus) -> {
+            JLabel label = new JLabel();
+            label.setOpaque(true);
+            label.setFont(new Font("Dialog", Font.PLAIN, 13));
+            label.setBorder(new EmptyBorder(4, 8, 4, 8));
+            if (value != null) {
+                label.setText("[SUGGEST] " + value.getTitle() + "   [" + normalizeCategory(value) + "]");
+            }
+            label.setBackground(isSelected ? new Color(219, 234, 251) : Color.WHITE);
+            return label;
+        });
+        suggestionList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() >= 1) {
+                    acceptSuggestionSelection();
+                }
+            }
+        });
+
+        suggestionPopup = new JPopupMenu();
+        suggestionPopup.setFocusable(false);
+        suggestionPopup.setBorder(new LineBorder(new Color(180, 198, 220), 1, true));
+        JScrollPane listScroll = new JScrollPane(suggestionList);
+        listScroll.setPreferredSize(new Dimension(320, 180));
+        suggestionPopup.add(listScroll);
+
+        // Debounce: avoid recomputing suggestions on every keystroke.
+        autoCompleteTimer = new Timer(AUTO_COMPLETE_DELAY_MS, e -> updateAutoCompleteSuggestions());
+        autoCompleteTimer.setRepeats(false);
+
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                autoCompleteTimer.restart();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                autoCompleteTimer.restart();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                autoCompleteTimer.restart();
+            }
+        });
+
+        // Arrow keys move within suggestions only; search execution remains explicit.
+        searchField.getInputMap().put(KeyStroke.getKeyStroke("DOWN"), "suggestDown");
+        searchField.getInputMap().put(KeyStroke.getKeyStroke("UP"), "suggestUp");
+        searchField.getInputMap().put(KeyStroke.getKeyStroke("ESCAPE"), "suggestClose");
+
+        searchField.getActionMap().put("suggestDown", new AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                if (!suggestionPopup.isVisible() || suggestionModel.isEmpty()) {
+                    return;
+                }
+                int current = suggestionList.getSelectedIndex();
+                int next = Math.max(0, Math.min(suggestionModel.size() - 1, current + 1));
+                suggestionList.setSelectedIndex(next);
+                suggestionList.ensureIndexIsVisible(next);
+            }
+        });
+
+        searchField.getActionMap().put("suggestUp", new AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                if (!suggestionPopup.isVisible() || suggestionModel.isEmpty()) {
+                    return;
+                }
+                int current = suggestionList.getSelectedIndex();
+                int next = Math.max(0, Math.min(suggestionModel.size() - 1, current - 1));
+                suggestionList.setSelectedIndex(next);
+                suggestionList.ensureIndexIsVisible(next);
+            }
+        });
+
+        searchField.getActionMap().put("suggestClose", new AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                suggestionPopup.setVisible(false);
+            }
+        });
+
+        searchField.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusLost(java.awt.event.FocusEvent e) {
+                SwingUtilities.invokeLater(() -> {
+                    if (!searchField.hasFocus()) {
+                        suggestionPopup.setVisible(false);
+                    }
+                });
+            }
+        });
+    }
+
+    // Refreshes popup suggestions from the current text without triggering final search.
+    private void updateAutoCompleteSuggestions() {
+        if (suppressAutoCompleteUpdate) {
+            return;
+        }
+
+        String keyword = searchField.getText() == null ? "" : searchField.getText().trim();
+        if (keyword.isEmpty()) {
+            suggestionPopup.setVisible(false);
+            return;
+        }
+
+        List<Concept> suggested = searchService.suggest(keyword, AUTO_COMPLETE_LIMIT);
+        if (suggested.isEmpty()) {
+            suggestionPopup.setVisible(false);
+            return;
+        }
+
+        suggestionModel.clear();
+        for (Concept c : suggested) {
+            suggestionModel.addElement(c);
+        }
+        suggestionList.setSelectedIndex(0);
+
+        int width = Math.max(searchField.getWidth(), 360);
+        suggestionPopup.setPopupSize(width, Math.min(220, 30 + (suggestionModel.size() * 28)));
+        if (!suggestionPopup.isVisible()) {
+            suggestionPopup.show(searchField, 0, searchField.getHeight());
+        } else {
+            suggestionPopup.revalidate();
+            suggestionPopup.repaint();
+        }
+    }
+
+    // Applies the selected suggestion as an exact match and renders only that concept.
+    // This prevents fuzzy search from returning many loosely-related results.
+    private void acceptSuggestionSelection() {
+        Concept selected = suggestionList.getSelectedValue();
+        if (selected == null) {
+            return;
+        }
+
+        // Prevent recursive document-listener updates when text is set programmatically.
+        suppressAutoCompleteUpdate = true;
+        searchField.setText(selected.getTitle());
+        suppressAutoCompleteUpdate = false;
+        suggestionPopup.setVisible(false);
+        updateList(Collections.singletonList(selected), true);
+        displayDetail(selected);
+    }
     private void stylePrimaryButton(JButton button) {
         button.setFont(new Font("맑은 고딕", Font.BOLD, 12));
         button.setBackground(ACCENT);
@@ -412,12 +587,18 @@ public class MainWikiFrame extends JFrame {
     private void applyCurrentView() {
         String keyword = searchField == null ? "" : searchField.getText().trim();
         List<Concept> base = keyword.isEmpty() ? repository.findAll() : searchService.search(keyword);
-        updateList(base);
+        updateList(base, !keyword.isEmpty());
     }
 
-    private void renderTree(List<Concept> concepts) {
+    private void renderTree(List<Concept> concepts, boolean searchMode) {
         DefaultMutableTreeNode root = new DefaultMutableTreeNode("지식");
         Map<String, DefaultMutableTreeNode> categoryNodes = new LinkedHashMap<>();
+        DefaultMutableTreeNode searchResultNode = null;
+
+        if (searchMode) {
+            searchResultNode = new DefaultMutableTreeNode("Search Results");
+            root.add(searchResultNode);
+        }
 
         for (String category : CATEGORY_ORDER) {
             DefaultMutableTreeNode node = new DefaultMutableTreeNode(category);
@@ -429,6 +610,9 @@ public class MainWikiFrame extends JFrame {
         sorted.sort(Comparator.comparing(Concept::getTitle, String.CASE_INSENSITIVE_ORDER));
 
         for (Concept concept : sorted) {
+            if (searchResultNode != null) {
+                searchResultNode.add(new DefaultMutableTreeNode(concept));
+            }
             String category = normalizeCategory(concept);
             if (!"전체".equals(currentCategory) && !currentCategory.equals(category)) {
                 continue;
@@ -503,7 +687,8 @@ public class MainWikiFrame extends JFrame {
     private void performSearch() {
         String keyword = searchField.getText().trim();
         List<Concept> results = keyword.isEmpty() ? repository.findAll() : searchService.search(keyword);
-        updateList(results);
+        suggestionPopup.setVisible(false);
+        updateList(results, !keyword.isEmpty());
 
         if (!keyword.isEmpty() && results.isEmpty()) {
             Concept best = searchService.getBestMatch(keyword);
@@ -519,7 +704,11 @@ public class MainWikiFrame extends JFrame {
     }
 
     public void updateList(List<Concept> concepts) {
-        SwingUtilities.invokeLater(() -> renderTree(concepts));
+        updateList(concepts, false);
+    }
+
+    private void updateList(List<Concept> concepts, boolean searchMode) {
+        SwingUtilities.invokeLater(() -> renderTree(concepts, searchMode));
     }
 
     public void applyServerData(List<Concept> concepts) {
@@ -527,7 +716,7 @@ public class MainWikiFrame extends JFrame {
         SwingUtilities.invokeLater(() -> {
             String keyword = searchField != null ? searchField.getText().trim() : "";
             if (!keyword.isEmpty()) {
-                updateList(searchService.search(keyword));
+                updateList(searchService.search(keyword), true);
             } else {
                 refreshList();
             }
