@@ -249,54 +249,54 @@ sequenceDiagram
 #### 5-9-1. 시작부터 종료까지 전체 분기 상세도
 ```mermaid
 flowchart LR
-    시작([시작]) --> 연결확인([연결 확인])
-    연결확인 --> 모드판단{온라인 모드인가?}
+    A([시작]) --> B([연결 확인])
+    B --> C{온라인 모드인가}
 
-    모드판단 -- 예 --> 온라인초기화[서버 연결 + 동기화 데이터 수신]
-    모드판단 -- 아니오 --> 오프라인초기화[로컬 JSON 로드]
+    C -- 예 --> D[서버 연결 및 동기화 데이터 수신]
+    C -- 아니오 --> E[로컬 JSON 로드]
 
-    온라인초기화 --> 메인진입[메인 화면 진입]
-    오프라인초기화 --> 메인진입
+    D --> F[메인 화면 진입]
+    E --> F
 
-    메인진입 --> 검색입력[/검색어 입력/]
-    검색입력 --> 자동완성갱신[자동완성 갱신\nDocumentListener + debounce]
-    자동완성갱신 --> 추천존재{추천 항목이 있는가?}
+    F --> G[/검색어 입력/]
+    G --> H[자동완성 갱신<br/>문서 변경 감지 + 디바운스]
+    H --> I{추천 항목 존재 여부}
 
-    추천존재 -- 아니오 --> 일반검색[일반 검색 실행\nperformSearch]
-    추천존재 -- 예 --> 추천선택{추천을 선택했는가?}
+    I -- 아니오 --> J[일반 검색 실행<br/>performSearch]
+    I -- 예 --> K{추천 선택 여부}
 
-    추천선택 -- 예 --> 단건표시[선택 항목 1건 표시\nacceptSuggestionSelection]
-    추천선택 -- 아니오 --> 일반검색
+    K -- 예 --> L[선택 항목 1건 표시<br/>acceptSuggestionSelection]
+    K -- 아니오 --> J
 
-    일반검색 --> 결과존재{검색 결과가 있는가?}
-    결과존재 -- 예 --> 결과트리[검색결과 노드 렌더링\nrenderTree(searchMode=true)]
-    결과존재 -- 아니오 --> 유사안내[유사 항목 안내\ngetBestMatch]
+    J --> M{검색 결과 존재 여부}
+    M -- 예 --> N[검색결과 노드 렌더링<br/>renderTree searchMode true]
+    M -- 아니오 --> O[유사 항목 안내<br/>getBestMatch]
 
-    단건표시 --> 상세표시[상세 패널 표시\ndisplayDetail]
-    결과트리 --> 상세표시
-    유사안내 --> 검색입력
+    L --> P[상세 패널 표시<br/>displayDetail]
+    N --> P
+    O --> G
 
-    상세표시 --> 작업판단{추가/수정/삭제 작업이 있는가?}
-    작업판단 -- 아니오 --> 종료([종료])
-    작업판단 -- 예 --> 저장소반영[저장소 반영\nConceptRepository]
+    P --> Q{추가 수정 삭제 작업 여부}
+    Q -- 아니오 --> R([종료])
+    Q -- 예 --> S[저장소 반영<br/>ConceptRepository]
 
-    저장소반영 --> 전파판단{온라인 모드인가?}
-    전파판단 -- 예 --> 서버전파[서버 전파\nADD / UPDATE / DELETE]
-    전파판단 -- 아니오 --> 로컬갱신[로컬 상태 갱신]
+    S --> T{온라인 모드 여부}
+    T -- 예 --> U[서버 전파<br/>ADD UPDATE DELETE]
+    T -- 아니오 --> V[로컬 상태 갱신]
 
-    서버전파 --> 목록갱신[목록 새로고침\nrefreshList]
-    로컬갱신 --> 목록갱신
-    목록갱신 --> 검색입력
+    U --> W[목록 새로고침<br/>refreshList]
+    V --> W
+    W --> G
 
     classDef startEnd fill:#e9f7ef,stroke:#2e7d32,color:#1b5e20,stroke-width:1.5px;
     classDef process fill:#eef4ff,stroke:#2f5ea8,color:#183b73,stroke-width:1.2px;
     classDef decision fill:#fff4e5,stroke:#b26a00,color:#7a4300,stroke-width:1.2px;
     classDef warn fill:#fdecec,stroke:#b33939,color:#7a1f1f,stroke-width:1.2px;
 
-    class 시작,종료 startEnd;
-    class 연결확인,온라인초기화,오프라인초기화,메인진입,검색입력,자동완성갱신,일반검색,단건표시,결과트리,상세표시,저장소반영,서버전파,로컬갱신,목록갱신 process;
-    class 모드판단,추천존재,추천선택,결과존재,작업판단,전파판단 decision;
-    class 유사안내 warn;
+    class A,R startEnd;
+    class B,D,E,F,G,H,J,L,N,P,S,U,V,W process;
+    class C,I,K,M,Q,T decision;
+    class O warn;
 ```
 
 #### 5-9-2. 데이터 저장/동기화 상세 시퀀스
@@ -309,9 +309,9 @@ sequenceDiagram
     participant 저장소
     participant 서버
 
-    사용자->>편집화면: 개념 추가/수정/삭제 요청
-    편집화면->>메인화면: 결과 전달(onDataAdded 등)
-    메인화면->>저장소: 데이터 반영(add/update/delete)
+    사용자->>편집화면: 개념 추가 수정 삭제 요청
+    편집화면->>메인화면: 결과 전달 onDataAdded 등
+    메인화면->>저장소: 데이터 반영 add update delete
 
     alt 온라인 모드
         메인화면->>서버: 변경 이벤트 전송
@@ -322,13 +322,13 @@ sequenceDiagram
     end
 
     메인화면->>메인화면: refreshList 실행
-    메인화면-->>사용자: 갱신된 목록/상세 화면 표시
+    메인화면-->>사용자: 갱신된 목록 상세 화면 표시
 ```
 
 프로세스 포인트
 - 추천 선택 경로는 일반 검색 경로와 분리되어 과검색을 방지합니다.
 - 검색 결과는 `검색결과` 노드로 우선 노출되어 카테고리 확장 없이 확인할 수 있습니다.
-- CRUD 이후 온라인/오프라인 분기에 따라 서버 전파 여부가 달라집니다.
+- CRUD 이후 온라인 오프라인 분기에 따라 서버 전파 여부가 달라집니다.
 ## 6. 실행 방법
 1. 서버 실행: `Reproject.WikiServer`
 2. 클라이언트 실행: `Reproject.WikiClient`
