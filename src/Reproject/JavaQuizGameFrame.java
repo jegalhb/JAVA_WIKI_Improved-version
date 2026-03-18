@@ -12,7 +12,7 @@ import java.util.List;
  * Java 학습 게임 UI 뼈대 프레임.
  * - 상단: 도움말 / 접속자 / 사전 / 게임 시작 / 나가기
  * - 중앙: 라운드 상태 및 문제 보드
- * - 하단: 로그 + 답 입력 // 구조 개선중
+ * - 하단: 로그 + 답 입력 // 구조 개선중입니다.
  */
 public class JavaQuizGameFrame extends JFrame {
     private static final Color BG_GAME = new Color(76, 165, 79);
